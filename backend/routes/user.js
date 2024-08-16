@@ -2,7 +2,7 @@ const express = require("express");
 const zod = require("zod");
 const bcrypt = require("bcrypt");
 const JWT_SECRET = require("../config");
-const { User } = require("../db");
+const { User, Account } = require("../db");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 
@@ -14,30 +14,31 @@ router.get("/", (req, res) => {
 
 //signup
 
-const signupSchema = zod.object({
-  username: zod.string(),
-  password: zod.string(),
+const signupBody = zod.object({
+  username: zod.string().email(),
   firstName: zod.string(),
   lastName: zod.string(),
+  password: zod.string(),
 });
 
 router.post("/signup", async (req, res) => {
-  const body = req.body;
-  const { success } = signupSchema.safeParse(req.body);
+  const { success } = signupBody.safeParse(req.body);
   if (!success) {
-    return res.json({
-      message: "email already taken",
+    return res.status(411).json({
+      message: "Incorrect inputs",
     });
   }
-  const user = User.findOne({
-    username: body.username,
+
+  const existingUser = await User.findOne({
+    username: req.body.username,
   });
 
-  if (user._id) {
-    return res.json({
-      message: "email already taken",
+  if (existingUser) {
+    return res.status(411).json({
+      message: "Email already taken",
     });
   }
+
   const { username, firstName, lastName, password } = req.body;
 
   const salt = await bcrypt.genSalt(10);
@@ -48,16 +49,26 @@ router.post("/signup", async (req, res) => {
     lastName,
     password: hashedPassword,
   });
+  const userId = newUser._id;
+
+  // ----- Create new account ------
+
+  await Account.create({
+    userId,
+    balance: parseInt(Math.random() * 10000),
+  });
+
+  // -----  -----
 
   const token = jwt.sign(
     {
-      userId: newUser._id,
+      userId,
     },
-    JWT_SECRET
+    process.env.JWT_SECRET
   );
 
-  res.json({
-    message: "user crated successfully",
+  res.status(200).json({
+    message: "User created successfully",
     token: token,
   });
 });

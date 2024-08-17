@@ -75,6 +75,50 @@ router.post("/signup", async (req, res) => {
 });
 
 
+// USER SIGN IN
+
+const signinBody = zod.object({
+  username: zod.string().email(),
+  password: zod.string(),
+});
+
+router.post("/signin", async (req, res) => {
+  const { success } = signinBody.safeParse(req.body);
+  if (!success) {
+    return res.status(411).json({
+      message: "Incorrect inputs",
+    });
+  }
+
+  const user = await User.findOne({
+    username: req.body.username,
+  });
+
+  if (!user) {
+    return res.status(404).json("User not found!");
+  }
+
+  if (user) {
+    const match = await bcrypt.compare(req.body.password, user.password);
+    if (!match) {
+      return res.status(401).json("Wrong credentials!");
+    }
+
+    const token = jwt.sign(
+      {
+        userId: user._id,
+      },
+      process.env.JWT_SECRET
+    );
+
+    res.status(200).json({
+      token: token,
+    });
+    return;
+  }
+});
+
+
 //update user
 
 const updateBody = zod.object({
@@ -97,6 +141,8 @@ router.put("/", authMiddleware, async (req, res) => {
     message: "Updated successfully",
   });
 });
+
+
 
 
 //find user on basis of substring of userfield
@@ -128,6 +174,14 @@ router.get("/bulk", async (req, res) => {
     })),
   });
 });
+
+router.get("/getUser", authMiddleware, async (req, res) => {
+  const user = await User.findOne({
+    _id: req.userId,
+  });
+  res.json(user);
+});
+
 
 
 

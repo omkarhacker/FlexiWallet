@@ -5,11 +5,12 @@ const JWT_SECRET = require("../config");
 const { User, Account } = require("../db");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
+const { authMiddleware } = require("../middleware");
 
 
-router.get("/", (req, res) => {
-  res.send("good to go");
-});
+// router.get("/", (req, res) => {
+//   res.send("good to go");
+// });
 
 
 //signup

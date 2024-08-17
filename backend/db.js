@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-mongoose.connect("mongodb://localhost:27017/paytm");
+mongoose.connect("mongodb+srv://delta-student:fcBPpnqRJrCaQLZs@cluster0.jg7qm.mongodb.net/paytm?retryWrites=true&w=majority&appName=Cluster0");
 
 
 const userSchema=mongoose.Schema({
